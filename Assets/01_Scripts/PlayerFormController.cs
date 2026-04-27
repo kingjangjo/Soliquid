@@ -22,10 +22,13 @@ public class PlayerFormController : MonoBehaviour
 
     private InputSystem_Actions _controls;
 
+    public int sizeIndex = 0;
+
     void Awake() => _controls = new InputSystem_Actions();
     void OnEnable() => _controls.Enable();
     void OnDisable() => _controls.Disable();
     public SoulCore playerData;
+    public PlayerParticleSystem pps;
 
     private void Start()
     {
@@ -48,6 +51,8 @@ public class PlayerFormController : MonoBehaviour
             soulForm.SetActive(true);
             humanoidCollider.enabled = false;
             soulCollider.enabled = true;
+            pps.SetSoul(sizeIndex);
+            sizeIndex = 0;
         }
         else
         {
@@ -56,6 +61,12 @@ public class PlayerFormController : MonoBehaviour
             soulForm.SetActive(false);
             humanoidCollider.enabled = true;
             soulCollider.enabled = false;
+            sizeIndex += pps.SetHumanoid();
+            if(sizeIndex > 100)
+            {
+                Debug.Log(new Vector3(1.0f, 1.0f, 1.0f) * sizeIndex * 1.0f / 250.0f);
+                humanoidForm.gameObject.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f) * sizeIndex * 1.0f / 250.0f;
+            }
         }
     }
 }

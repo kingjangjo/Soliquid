@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class SoulCore : MonoBehaviour
@@ -25,7 +26,6 @@ public class SoulCore : MonoBehaviour
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         rb.constraints = RigidbodyConstraints.FreezeRotation;
     }
-
     void FixedUpdate()
     {
         //지면 체크
@@ -61,11 +61,23 @@ public class SoulCore : MonoBehaviour
             horizontal = horizontal.normalized * maxSpeed;
             rb.linearVelocity = new Vector3(horizontal.x, vel.y, horizontal.z);
         }
-        if(currentForm == PlayerForm.Humanoid)
+        if (currentForm == PlayerForm.Humanoid)
         {
-            playerAnim.SetFloat("Speed", currentVelocity.magnitude / maxSpeed);
-            playerAnim.SetFloat("MoveX", currentVelocity.x / maxSpeed);
-            playerAnim.SetFloat("MoveY", currentVelocity.z / maxSpeed);
+            // 1. 월드 좌표 기준의 속도를 캐릭터의 로컬 좌표계로 변환합니다.
+            // 이렇게 하면 캐릭터가 어느 방향을 보든 '캐릭터 기준 앞/옆' 속도를 얻을 수 있습니다.
+            Vector3 localVelocity = transform.InverseTransformDirection(rb.linearVelocity);
+
+            // 2. 최대 속도로 나누어 -1 ~ 1 사이의 값으로 정규화합니다.
+            float moveX = localVelocity.x / maxSpeed;
+            float moveY = localVelocity.z / maxSpeed;
+
+            // 3. 파라미터 전달 (Mathf.Clamp로 범위를 안전하게 제한)
+            playerAnim.SetFloat("MoveX", Mathf.Clamp(moveX, -1f, 1f));
+            playerAnim.SetFloat("MoveY", Mathf.Clamp(moveY, -1f, 1f));
+
+            // 전체 속도감 (애니메이션 재생 속도 조절용)
+            Vector3 horizontalVel = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+            playerAnim.SetFloat("Speed", horizontalVel.magnitude / maxSpeed);
         }
         // 점프
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)

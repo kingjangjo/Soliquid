@@ -52,6 +52,10 @@ public class PlayerParticleSystem : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            Debug.Log(SetHumanoid());
+        }
         float dt = Mathf.Min(Time.deltaTime, 0.016f);
         int subSteps = 4;
         float subDt = dt / subSteps;
@@ -69,7 +73,7 @@ public class PlayerParticleSystem : MonoBehaviour
 
     void OnBeginCamera(ScriptableRenderContext context, Camera camera)
     {
-        if (camera.name != "LiquidCamera") return;
+        if (camera.name != "Main Camera") return;
 
         RenderParticles(camera);
     }
@@ -356,6 +360,36 @@ public class PlayerParticleSystem : MonoBehaviour
             }
         }
         return Vector3.zero;
+    }
+    public int SetHumanoid()
+    {
+        int removeCount = 0;
+        for(int i = particles.Count - 1; i >= 0; i--)
+        {
+            var p = particles[i];
+            Vector3 toCore = core.transform.position - p.position;
+            float dist = toCore.magnitude;
+            if (dist < 2.5f)
+            {
+                particles.Remove(p);
+                removeCount++;
+            }
+        }
+        return removeCount;
+    }
+    public void SetSoul(int count)
+    {
+        for(int i = 0; i < count; i++)
+        {
+            Vector3 pos = core.transform.position + Random.insideUnitSphere * 1.5f;
+            Particle p = new Particle(pos);
+
+            // 2. 초기 속도를 0으로 확실히 고정 (생성 직후 튀는 현상 방지)
+            p.velocity = Vector3.zero;
+            p.prevPosition = pos;
+
+            particles.Add(p);
+        }
     }
     //void ApplyCohesion(Particle p, float dt)
     //{
