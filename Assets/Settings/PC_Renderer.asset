@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: LiquidFinalPass
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.FullScreenPassRendererFeature
   m_Active: 1
-  injectionPoint: 550
+  injectionPoint: 600
   fetchColorBuffer: 1
   requirements: 4
-  passMaterial: {fileID: 2100000, guid: 7b4aa261d4aad05478dfec2fd31c56df, type: 2}
+  passMaterial: {fileID: 2100000, guid: a48d9a7f4263c3d4585ddd2fbcd2f184, type: 2}
   passIndex: 0
   bindDepthStencilAttachment: 0
   m_Version: 1

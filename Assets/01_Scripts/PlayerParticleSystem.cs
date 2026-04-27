@@ -56,7 +56,7 @@ public class PlayerParticleSystem : MonoBehaviour
         int subSteps = 4;
         float subDt = dt / subSteps;
 
-        spatialHash.Rebuild(particles);
+        //spatialHash.Rebuild(particles);
 
         for (int i = 0; i < subSteps; i++)
         {
@@ -64,22 +64,14 @@ public class PlayerParticleSystem : MonoBehaviour
         }
         //SimulationStep(dt);
     }
-    private void LateUpdate()
-    {
-        RenderParticles();
-    }
-    //void OnEnable() => RenderPipelineManager.beginCameraRendering += OnBeginCamera;
-    //void OnDisable() => RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
+    void OnEnable() => RenderPipelineManager.beginCameraRendering += OnBeginCamera;
+    void OnDisable() => RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
+
     void OnBeginCamera(ScriptableRenderContext context, Camera camera)
     {
-        if (camera.cameraType != CameraType.Game) return;
+        if (camera.name != "LiquidCamera") return;
 
-        RenderParams rp = new RenderParams(particleMaterial);
-        rp.layer = LayerMask.NameToLayer("Liquid");
-        rp.worldBounds = new Bounds(Vector3.zero, Vector3.one * 1000);
-        int particleCount = Mathf.Min(particles.Count, instanceMatrices.Length);
-        // camera를 반드시 인자로 넘겨주어야 해당 카메라의 렌더 루프에 포함됩니다.
-        Graphics.RenderMeshInstanced(rp, particleMesh, 0, instanceMatrices, particleCount);
+        RenderParticles(camera);
     }
 
     //void SimulationStep(float dt, bool heavyCompute)
@@ -517,7 +509,7 @@ public class PlayerParticleSystem : MonoBehaviour
             Gizmos.DrawWireSphere(core.transform.position, cohesionRadius);
         }
     }
-    void RenderParticles()
+    void RenderParticles(Camera camera)
     {
         int count = particles.Count;
         if (count == 0) return;
@@ -541,6 +533,7 @@ public class PlayerParticleSystem : MonoBehaviour
         // 2. RenderParams 설정 (크래시 방지 핵심)
         RenderParams rp = new RenderParams(particleMaterial);
         rp.layer = LayerMask.NameToLayer("Liquid"); // 10번 레이어 할당
+        rp.camera = camera;
 
         // 중요: 카메라가 이 메쉬를 그릴지 판단할 영역을 설정합니다. 
         // 실제 파티클이 위치하는 전체 범위를 넣거나, 테스트를 위해 아주 크게 잡으세요.
