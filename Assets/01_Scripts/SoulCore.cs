@@ -16,6 +16,8 @@ public class SoulCore : MonoBehaviour
     public float groundCheckRadius = 0.3f;
 
     private bool isGrounded;
+    public Animator playerAnim;
+    public PlayerForm currentForm;
 
     void Start()
     {
@@ -59,7 +61,12 @@ public class SoulCore : MonoBehaviour
             horizontal = horizontal.normalized * maxSpeed;
             rb.linearVelocity = new Vector3(horizontal.x, vel.y, horizontal.z);
         }
-        Debug.Log($"{isGrounded}");
+        if(currentForm == PlayerForm.Humanoid)
+        {
+            playerAnim.SetFloat("Speed", currentVelocity.magnitude / maxSpeed);
+            playerAnim.SetFloat("MoveX", currentVelocity.x / maxSpeed);
+            playerAnim.SetFloat("MoveY", currentVelocity.z / maxSpeed);
+        }
         // 점프
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {

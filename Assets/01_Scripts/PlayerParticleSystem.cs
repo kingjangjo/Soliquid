@@ -1,5 +1,6 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
 
 public class PlayerParticleSystem : MonoBehaviour
 {
@@ -34,7 +35,6 @@ public class PlayerParticleSystem : MonoBehaviour
     public Material particleMaterial;
 
     public Matrix4x4[] instanceMatrices;
-    private static readonly int colorID = Shader.PropertyToID("instancedMatrices");
 
     private Vector3 gravity = new Vector3(0, -9.8f, 0);
     private SpatialHash spatialHash;
@@ -42,6 +42,7 @@ public class PlayerParticleSystem : MonoBehaviour
 
     // 충돌 체크용 캐시 (GC 방지)
     private Collider[] colliderCache = new Collider[8];
+
 
     void Start()
     {
@@ -62,6 +63,23 @@ public class PlayerParticleSystem : MonoBehaviour
             SimulationStep(subDt, i == 0);
         }
         //SimulationStep(dt);
+    }
+    private void LateUpdate()
+    {
+        RenderParticles();
+    }
+    //void OnEnable() => RenderPipelineManager.beginCameraRendering += OnBeginCamera;
+    //void OnDisable() => RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
+    void OnBeginCamera(ScriptableRenderContext context, Camera camera)
+    {
+        if (camera.cameraType != CameraType.Game) return;
+
+        RenderParams rp = new RenderParams(particleMaterial);
+        rp.layer = LayerMask.NameToLayer("Liquid");
+        rp.worldBounds = new Bounds(Vector3.zero, Vector3.one * 1000);
+        int particleCount = Mathf.Min(particles.Count, instanceMatrices.Length);
+        // camera를 반드시 인자로 넘겨주어야 해당 카메라의 렌더 루프에 포함됩니다.
+        Graphics.RenderMeshInstanced(rp, particleMesh, 0, instanceMatrices, particleCount);
     }
 
     //void SimulationStep(float dt, bool heavyCompute)
@@ -501,10 +519,34 @@ public class PlayerParticleSystem : MonoBehaviour
     }
     void RenderParticles()
     {
-        if (particles.Count == 0)
-            return;
+        int count = particles.Count;
+        if (count == 0) return;
 
-        if (instanceMatrices == null || instanceMatrices.Length != particles.Count)
-            instanceMatrices = new Matrix4x4[particles.Count];
+        // 1. 성능 최적화: 배열 재할당 방지
+        if (instanceMatrices == null || instanceMatrices.Length < count)
+        {
+            // 여유 있게 10% 정도 더 크게 할당하면 파티클 개수가 변할 때 재할당 횟수가 줄어듭니다.
+            instanceMatrices = new Matrix4x4[Mathf.CeilToInt(count * 1.1f)];
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            instanceMatrices[i] = Matrix4x4.TRS(
+                particles[i].position,
+                Quaternion.identity,
+                Vector3.one * (particleRadius * 2f)
+            );
+        }
+
+        // 2. RenderParams 설정 (크래시 방지 핵심)
+        RenderParams rp = new RenderParams(particleMaterial);
+        rp.layer = LayerMask.NameToLayer("Liquid"); // 10번 레이어 할당
+
+        // 중요: 카메라가 이 메쉬를 그릴지 판단할 영역을 설정합니다. 
+        // 실제 파티클이 위치하는 전체 범위를 넣거나, 테스트를 위해 아주 크게 잡으세요.
+        rp.worldBounds = new Bounds(Vector3.zero, Vector3.one * 1000f);
+
+        // 3. 인스턴싱 그리기
+        Graphics.RenderMeshInstanced(rp, particleMesh, 0, instanceMatrices, count);
     }
-}
+}   

@@ -25,12 +25,18 @@ public class PlayerFormController : MonoBehaviour
     void Awake() => _controls = new InputSystem_Actions();
     void OnEnable() => _controls.Enable();
     void OnDisable() => _controls.Disable();
+    public SoulCore playerData;
 
+    private void Start()
+    {
+        playerData = GetComponent<SoulCore>();
+    }
     private void Update()
     {
         if (_controls.Player.FormChange.triggered)
         {
             FormChange();
+            playerData.currentForm = this.currentForm;
         }
     }
     void FormChange()
