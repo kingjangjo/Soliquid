@@ -20,6 +20,7 @@ public class PlayerParticleSystem : MonoBehaviour
     [Header("Cohesion - 핵을 향한 응집력")]
     public float cohesionRadius = 2.5f;
     public float cohesionStrength = 40f;
+    private float defaultCohesionStrength;
 
     [Header("Collision")]
     public LayerMask environmentLayer;
@@ -46,6 +47,7 @@ public class PlayerParticleSystem : MonoBehaviour
 
     void Start()
     {
+        defaultCohesionStrength = cohesionStrength;
         spatialHash = new SpatialHash(radius);
         SpawnParticles();
     }
@@ -73,7 +75,7 @@ public class PlayerParticleSystem : MonoBehaviour
 
     void OnBeginCamera(ScriptableRenderContext context, Camera camera)
     {
-        if (camera.name != "Main Camera") return;
+        if (camera.name != "LiquidCamera") return;
 
         RenderParticles(camera);
     }
@@ -375,19 +377,37 @@ public class PlayerParticleSystem : MonoBehaviour
                 removeCount++;
             }
         }
+        cohesionStrength = 0f;
         return removeCount;
     }
     public void SetSoul(int count)
     {
-        for(int i = 0; i < count; i++)
-        {
-            Vector3 pos = core.transform.position + Random.insideUnitSphere * 1.5f;
-            Particle p = new Particle(pos);
+        //for(int i = 0; i < count; i++)
+        //{
+        //    Vector3 pos = core.transform.position + Random.insideUnitSphere * 1.5f;
+        //    Particle p = new Particle(pos);
 
-            // 2. 초기 속도를 0으로 확실히 고정 (생성 직후 튀는 현상 방지)
+        //    // 2. 초기 속도를 0으로 확실히 고정 (생성 직후 튀는 현상 방지)
+        //    p.velocity = Vector3.zero;
+        //    p.prevPosition = pos;
+
+        //    particles.Add(p);
+        //}
+        cohesionStrength = defaultCohesionStrength;
+        for (int i = 0; i < count; i++)
+        {
+            // Random.onUnitSphere의 y값을 양수로 절댓값 처리하여 위쪽으로만 퍼지게 함
+            Vector3 randomDir = Random.insideUnitSphere;
+            if (randomDir.y < 0) randomDir.y *= -0.5f; // 바닥 쪽이면 위로 올림
+
+            Vector3 pos = core.transform.position + randomDir * 1.5f;
+
+            // 최소 생성 높이 보정 (예: 바닥 위 0.5f 지점)
+            if (pos.y < core.transform.position.y) pos.y = core.transform.position.y + 0.1f;
+
+            Particle p = new Particle(pos);
             p.velocity = Vector3.zero;
             p.prevPosition = pos;
-
             particles.Add(p);
         }
     }

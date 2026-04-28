@@ -1,4 +1,5 @@
 using System;
+using Unity.Cinemachine;
 using UnityEngine;
 
 
@@ -17,6 +18,11 @@ public class PlayerFormController : MonoBehaviour
     [Header("콜라이더")]
     public CapsuleCollider humanoidCollider;
     public SphereCollider soulCollider;
+
+    [Header("카메라")]
+    public GameObject soutTrackingTarget;
+    public GameObject humanoidTrackingTarget;
+    public CinemachineCamera cCam;
 
     public PlayerForm currentForm { get; private set; } = PlayerForm.Soul;
 
@@ -44,6 +50,7 @@ public class PlayerFormController : MonoBehaviour
     }
     void FormChange()
     {
+        var targetConfig = cCam.Target;
         if(currentForm == PlayerForm.Humanoid)
         {
             currentForm = PlayerForm.Soul;
@@ -53,6 +60,8 @@ public class PlayerFormController : MonoBehaviour
             soulCollider.enabled = true;
             pps.SetSoul(sizeIndex);
             sizeIndex = 0;
+            targetConfig.TrackingTarget = soutTrackingTarget.transform;
+            cCam.Target = targetConfig;
         }
         else
         {
@@ -65,8 +74,11 @@ public class PlayerFormController : MonoBehaviour
             if(sizeIndex > 100)
             {
                 Debug.Log(new Vector3(1.0f, 1.0f, 1.0f) * sizeIndex * 1.0f / 250.0f);
-                humanoidForm.gameObject.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f) * sizeIndex * 1.0f / 250.0f;
+                humanoidForm.gameObject.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f) * (1 + sizeIndex) * 1.0f / 250.0f;
+                //humanoidCollider.height = 1.7f * sizeIndex * 1.0f / 250.0f;
             }
+            targetConfig.TrackingTarget = humanoidTrackingTarget.transform;
+            cCam.Target = targetConfig;
         }
     }
 }

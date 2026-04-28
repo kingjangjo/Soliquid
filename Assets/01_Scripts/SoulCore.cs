@@ -19,6 +19,7 @@ public class SoulCore : MonoBehaviour
     private bool isGrounded;
     public Animator playerAnim;
     public PlayerForm currentForm;
+    private bool jumpRequest;
 
     void Start()
     {
@@ -26,19 +27,26 @@ public class SoulCore : MonoBehaviour
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         rb.constraints = RigidbodyConstraints.FreezeRotation;
     }
+    private void Update()
+    {
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            jumpRequest = true;
+        }
+    }
     void FixedUpdate()
     {
         //지면 체크
-        //isGrounded = Physics.CheckSphere(
-        //    transform.position - Vector3.up * 0.5f,
-        //    groundCheckRadius,
-        //    groundLayer
-        //);
         isGrounded = Physics.CheckSphere(
-            transform.position,
+            transform.position - Vector3.up * 0.15f,
             groundCheckRadius,
             groundLayer
         );
+        //isGrounded = Physics.CheckSphere(
+        //    transform.position,
+        //    groundCheckRadius,
+        //    groundLayer
+        //);
 
         // 이동
         Vector3 input = GetMovementInput();
@@ -80,10 +88,11 @@ public class SoulCore : MonoBehaviour
             playerAnim.SetFloat("Speed", horizontalVel.magnitude / maxSpeed);
         }
         // 점프
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        if (jumpRequest && isGrounded && rb.linearVelocity.y <= 0.01f)
         {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
+        jumpRequest = false;
     }
 
     Vector3 GetMovementInput()

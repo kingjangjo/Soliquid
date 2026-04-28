@@ -6,11 +6,11 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/00_Scenes/InGame.unity
-    guid: 89e98b9251d34a04f8c5a6f85b2fe517
-  - enabled: 1
     path: Assets/00_Scenes/Loby.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/00_Scenes/InGame.unity
+    guid: 89e98b9251d34a04f8c5a6f85b2fe517
   - enabled: 1
     path: Assets/00_Scenes/End.unity
     guid: 5a10e62334f3f3b4fa0906f4e24f41c6
