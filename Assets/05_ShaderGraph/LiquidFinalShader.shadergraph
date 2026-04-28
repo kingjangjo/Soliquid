@@ -59,6 +59,9 @@
         },
         {
             "m_Id": "40cde1780eed422f872f7d5b965ffb78"
+        },
+        {
+            "m_Id": "e440b17b6c8d43ae893c56b461cd0639"
         }
     ],
     "m_GroupDatas": [],
@@ -221,7 +224,7 @@
         {
             "m_OutputSlot": {
                 "m_Node": {
-                    "m_Id": "dbc891d9147441a4b44fda20b716cf02"
+                    "m_Id": "e440b17b6c8d43ae893c56b461cd0639"
                 },
                 "m_SlotId": 0
             },
@@ -1449,6 +1452,31 @@
 {
     "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
+    "m_ObjectId": "c4121fe7794d4ae2b1e918f9957ee073",
+    "m_Id": 0,
+    "m_DisplayName": "Out",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "Out",
+    "m_StageCapability": 3,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+    },
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
     "m_ObjectId": "cc3e647e8a8f48da8ce013029996aa49",
     "m_Id": 0,
     "m_DisplayName": "Out",
@@ -1597,6 +1625,44 @@
         "m_SerializableColors": []
     },
     "m_ScreenSpaceType": 0
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.UVNode",
+    "m_ObjectId": "e440b17b6c8d43ae893c56b461cd0639",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "UV",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -1211.0,
+            "y": -192.0,
+            "width": 208.0,
+            "height": 312.0
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "c4121fe7794d4ae2b1e918f9957ee073"
+        }
+    ],
+    "synonyms": [
+        "texcoords",
+        "coords",
+        "coordinates"
+    ],
+    "m_Precision": 0,
+    "m_PreviewExpanded": true,
+    "m_DismissedVersion": 0,
+    "m_PreviewMode": 0,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_OutputChannel": 0
 }
 
 {
