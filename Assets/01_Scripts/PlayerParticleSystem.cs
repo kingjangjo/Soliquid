@@ -68,7 +68,7 @@ public class PlayerParticleSystem : MonoBehaviour
         {
             SimulationStep(subDt, i == 0);
         }
-        //SimulationStep(dt);
+        //SimulationStep(dt); 
     }
     void OnEnable() => RenderPipelineManager.beginCameraRendering += OnBeginCamera;
     void OnDisable() => RenderPipelineManager.beginCameraRendering -= OnBeginCamera;

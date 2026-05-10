@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: LiquidFinalPass
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.FullScreenPassRendererFeature
   m_Active: 1
-  injectionPoint: 600
+  injectionPoint: 450
   fetchColorBuffer: 1
   requirements: -1
   passMaterial: {fileID: 2100000, guid: a48d9a7f4263c3d4585ddd2fbcd2f184, type: 2}
@@ -118,12 +118,12 @@ MonoBehaviour:
   m_Active: 1
   settings:
     passTag: Liquid
-    Event: 250
+    Event: 300
     filterSettings:
       RenderQueueType: 0
       LayerMask:
         serializedVersion: 2
-        m_Bits: 4294967295
+        m_Bits: 1024
       PassNames: []
     overrideMaterial: {fileID: 2100000, guid: 843953c2d96a8224ca2684db9cebd89a, type: 2}
     overrideMaterialPassIndex: 0
