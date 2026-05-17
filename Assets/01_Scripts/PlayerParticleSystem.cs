@@ -43,6 +43,7 @@ public class PlayerParticleSystem : MonoBehaviour
 
     // 충돌 체크용 캐시 (GC 방지)
     private Collider[] colliderCache = new Collider[8];
+    public float originCohesionStrength;
 
 
     void Start()
@@ -56,7 +57,16 @@ public class PlayerParticleSystem : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.E))
         {
-            Debug.Log(SetHumanoid());
+            if(cohesionStrength > 0)
+            {
+                originCohesionStrength = cohesionStrength;
+                cohesionStrength = 0f;
+            }
+            else
+            {   
+                cohesionStrength = originCohesionStrength;
+            }
+            
         }
         float dt = Mathf.Min(Time.deltaTime, 0.016f);
         int subSteps = 4;
