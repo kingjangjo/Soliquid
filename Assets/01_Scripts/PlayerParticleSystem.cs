@@ -66,7 +66,6 @@ public class PlayerParticleSystem : MonoBehaviour
             {   
                 cohesionStrength = originCohesionStrength;
             }
-            
         }
         float dt = Mathf.Min(Time.deltaTime, 0.016f);
         int subSteps = 4;
