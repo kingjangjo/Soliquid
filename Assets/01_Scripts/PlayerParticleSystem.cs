@@ -66,7 +66,7 @@ public class PlayerParticleSystem : MonoBehaviour
             {   
                 cohesionStrength = originCohesionStrength;
             }
-        }
+        }    
         float dt = Mathf.Min(Time.deltaTime, 0.016f);
         int subSteps = 4;
         float subDt = dt / subSteps;
@@ -320,16 +320,17 @@ public class PlayerParticleSystem : MonoBehaviour
 
         Vector3 dir = toCore / dist;
 
-        if(Physics.Raycast(p.position, dir, dist, environmentLayer))
-        {
-            Vector3 newBypass = GetBypassDirection(p, dir, dist);
-            if(newBypass != Vector3.zero)
-            {
-                p.velocity += newBypass * pullForce * 1.2f * dt;
-                p.velocity += dir * pullForce * 0.1f * dt;
-                return;
-            }
-        }
+        //if(Physics.Raycast(p.position, dir, dist, environmentLayer))
+        //{
+        //    Vector3 newBypass = GetBypassDirection(p, dir, dist);
+        //    if(newBypass != Vector3.zero)
+        //    {
+        //        p.velocity += newBypass * pullForce * 1.2f * dt;
+        //        p.velocity += dir * pullForce * 0.1f * dt;
+        //        return;
+        //    }
+        //}
+
         //float pullFactor = Mathf.Pow(Mathf.Clamp01(1.0f - (dist / (cohesionRadius * 2.0f))), 2);
         //p.velocity += dir * pullForce * pullFactor * dt;
         if (dist > cohesionRadius)
