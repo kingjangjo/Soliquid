@@ -946,10 +946,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -205.0,
-            "y": 603.0,
-            "width": 208.00001525878907,
-            "height": 125.00006103515625
+            "x": -207.50001525878907,
+            "y": 597.5000610351563,
+            "width": 208.0,
+            "height": 125.0
         }
     },
     "m_Slots": [
@@ -1193,10 +1193,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1292.0,
-            "y": 531.0,
+            "x": -1292.0001220703125,
+            "y": 525.0000610351563,
             "width": 228.0,
-            "height": 325.99993896484377
+            "height": 326.00006103515627
         }
     },
     "m_Slots": [
@@ -1228,7 +1228,7 @@
     "m_FunctionName": "GaussianBlur",
     "m_FunctionSource": "",
     "m_FunctionSourceUsePragmas": true,
-    "m_FunctionBody": "float4 sum = 0;\r\nfloat2 texelSize = (1.0 / _ScreenParams.xy) * BlurStrength;\r\n\r\nfor (int x = -2; x <= 2; x++) {\r\n    for (int y = -2; y <= 2; y++) {\r\n        float2 offset = float2(x, y) * texelSize;\r\n        sum += SAMPLE_TEXTURE2D(Tex.tex, Tex.samplerstate, UV + offset);\r\n    }\r\n}\r\nColor = sum / 25.0;"
+    "m_FunctionBody": "float4 sum = 0;\r\nfloat2 texelSize = (1.0 / _ScreenParams.xy) * BlurStrength;\r\n\nfor (int x = -2; x <= 2; x++) {\r\n    for (int y = -2; y <= 2; y++) {\r\n        float2 offset = float2(x, y) * texelSize;\r\n        sum += SAMPLE_TEXTURE2D(Tex.tex, Tex.samplerstate, UV + offset);\r\n    }\r\n}\r\n\r\nColor = sum / 25.0;"
 }
 
 {

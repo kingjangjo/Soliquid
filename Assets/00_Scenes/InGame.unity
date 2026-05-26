@@ -33741,7 +33741,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerParticleSystem
   core: {fileID: 127354980}
-  particleCount: 500
+  particleCount: 100
   radius: 0.5
   restDensity: 6
   stiffness: 60
