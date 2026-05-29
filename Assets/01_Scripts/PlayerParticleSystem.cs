@@ -37,11 +37,24 @@ public class PlayerParticleSystem : MonoBehaviour
 
     public Matrix4x4[] instanceMatrices;
 
+    // ─── [수정 A] Warmup 설정 ─────────────────────────────────────────
+    // SetSoul() 이후 몇 프레임 동안 DDR/충돌 보정을 부드럽게 감쇠시킨다.
+    // 액체 시뮬레이션 본체는 전혀 변경하지 않는다.
+    [Header("Spawn Warmup")]
+    [Tooltip("SetSoul 직후 안정화 프레임 수. 이 기간 동안 힘이 서서히 켜진다.")]
+    public int spawnWarmupFrames = 20;
+    private int warmupFramesLeft = 0;
+
+    // warmup 진행도 0~1. 0=방금 스폰, 1=완전 정상
+    private float WarmupT => warmupFramesLeft <= 0
+        ? 1f
+        : 1f - (float)warmupFramesLeft / spawnWarmupFrames;
+    // ──────────────────────────────────────────────────────────────────
+
     private Vector3 gravity = new Vector3(0, -9.8f, 0);
     private SpatialHash spatialHash;
     private List<int> neighborCache = new List<int>();
 
-    // 충돌 체크용 캐시 (GC 방지)
     private Collider[] colliderCache = new Collider[8];
     public float originCohesionStrength;
 
@@ -57,85 +70,62 @@ public class PlayerParticleSystem : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.E))
         {
-            if(cohesionStrength > 0)
+            if (cohesionStrength > 0)
             {
                 originCohesionStrength = cohesionStrength;
                 cohesionStrength = 0f;
             }
             else
-            {   
+            {
                 cohesionStrength = originCohesionStrength;
             }
-        }    
+        }
+
+        // ─── [수정 A-1] warmup 카운트다운 ───
+        if (warmupFramesLeft > 0)
+            warmupFramesLeft--;
+        // ────────────────────────────────────
+
         float dt = Mathf.Min(Time.deltaTime, 0.016f);
         int subSteps = 4;
         float subDt = dt / subSteps;
-
-        //spatialHash.Rebuild(particles);
 
         for (int i = 0; i < subSteps; i++)
         {
             SimulationStep(subDt, i == 0);
         }
-        //SimulationStep(dt); 
     }
+
     void OnEnable() => RenderPipelineManager.beginCameraRendering += OnBeginCamera;
     void OnDisable() => RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
 
     void OnBeginCamera(ScriptableRenderContext context, Camera camera)
     {
         if (camera.name != "LiquidCamera") return;
-
         RenderParticles(camera);
     }
 
-    //void SimulationStep(float dt, bool heavyCompute)
-    //{
-    //    // 1) 중력 + 응집력
-    //    foreach (var p in particles)
-    //    {
-    //        p.velocity += gravity * dt;
-    //        ApplyCohesion(p, dt);
-    //    }
-
-    //    // 3) 위치 예측
-    //    foreach (var p in particles)
-    //    {
-    //        p.prevPosition = p.position;
-    //        p.position += p.velocity * dt;
-    //    }
-
-    //    if (heavyCompute)
-    //    {
-    //        // 2) 점성
-    //        ApplyViscosity(dt);
-    //        // 4) DDR
-    //        DoubleDensityRelaxation(dt);
-    //    }
-
-
-
-    //    spatialHash.Rebuild(particles);
-
-
-    //    // 5) 환경 충돌 (입자별)
-    //    SolveEnvironmentCollisions_Optimized();
-
-    //    // 6) 속도 갱신
-    //    foreach (var p in particles)
-    //    {
-    //        p.velocity = (p.position - p.prevPosition) / dt;
-    //        p.velocity *= 0.98f; // 감쇠
-    //    }
-    //}
     void SimulationStep(float dt, bool heavyCompute)
     {
         // 1) 중력 + 응집력
+        // ─── [수정 B] warmup 중에는 cohesion을 서서히 켠다 ───
+        // WarmupT가 0이면 cohesion 0, 1이면 평상시 값
+        // ApplyCohesion 자체는 수정하지 않고 호출 시 강도를 스케일링한다.
+        float cohesionScale = warmupFramesLeft > 0
+            ? Mathf.SmoothStep(0f, 1f, WarmupT)
+            : 1f;
+
+        float savedCohesion = cohesionStrength;
+        cohesionStrength *= cohesionScale; // 임시 스케일
+
         foreach (var p in particles)
         {
             p.velocity += gravity * dt;
             ApplyCohesion(p, dt, true);
         }
+
+        cohesionStrength = savedCohesion; // 원상복구
+        // ──────────────────────────────────────────────────
 
         // 2) 위치 예측
         foreach (var p in particles)
@@ -144,15 +134,15 @@ public class PlayerParticleSystem : MonoBehaviour
             p.position += p.velocity * dt;
         }
 
-        // 3) 무거운 연산 (점성, DDR) - heavyCompute일 때만 실행
+        // 3) 무거운 연산 (점성, DDR) - 변경 없음
         if (heavyCompute)
         {
-            spatialHash.Rebuild(particles); // 리빌드를 이 안으로 이동
+            spatialHash.Rebuild(particles);
             ApplyViscosity(dt);
             DoubleDensityRelaxation(dt);
         }
 
-        // 4) 환경 충돌 (터널링 방지를 위해 매번 실행)
+        // 4) 환경 충돌
         SolveEnvironmentCollisions_Optimized();
 
         // 5) 속도 갱신
@@ -160,78 +150,33 @@ public class PlayerParticleSystem : MonoBehaviour
         {
             p.velocity = (p.position - p.prevPosition) / dt;
             p.velocity *= 0.98f;
+
+            // ─── [수정 C] 전역 속도 상한선 ───────────────────────────
+            // warmup 중일수록 더 엄격하게 제한한다.
+            // 평상시에도 너무 빠른 입자가 벽을 뚫는 것을 방지한다.
+            float maxSpeed = warmupFramesLeft > 0
+                ? Mathf.Lerp(2f, 15f, WarmupT)  // 처음엔 2, 나중엔 15
+                : 20f;                            // 평상시 상한
+            if (p.velocity.sqrMagnitude > maxSpeed * maxSpeed)
+                p.velocity = p.velocity.normalized * maxSpeed;
+            // ──────────────────────────────────────────────────────────
         }
     }
 
-    // 핵심: 입자별 환경 충돌
-
+    // ─── [수정 없음] 환경 충돌 수집 로직은 그대로 ───
     void SolveEnvironmentCollisions_Optimized()
     {
-        // ─── 1단계: Core 주변 콜라이더만 수집 ───
-        //int hitCount = Physics.OverlapSphereNonAlloc(
-        //    core.transform.position,
-        //    cohesionRadius + 1f,  // 입자가 퍼질 수 있는 범위
-        //    colliderCache,
-        //    environmentLayer
-        //);
-
-        //// 콜라이더가 없으면 바닥만 처리
-        //if (hitCount == 0)
-        //{
-        //    foreach (var p in particles)
-        //    {
-        //        if (p.position.y < groundY + particleRadius)
-        //        {
-        //            p.position.y = groundY + particleRadius;
-        //            if (p.velocity.y < 0) p.velocity.y *= -0.3f;
-        //        }
-        //    }
-        //    return;
-        //}
-
-        //// ─── 2단계: 각 입자에 대해 근처 콜라이더만 체크 ───
-        //foreach (var p in particles)
-        //{
-        //    // 바닥
-        //    if (p.position.y < groundY + particleRadius)
-        //    {
-        //        p.position.y = groundY + particleRadius;
-        //        if (p.velocity.y < 0) p.velocity.y *= -0.3f;
-        //    }
-
-        //    // 수집된 콜라이더만 검사 (Physics 호출 없음)
-        //    for (int i = 0; i < hitCount; i++)
-        //    {
-        //        Collider col = colliderCache[i];
-
-        //        // 빠른 거리 체크 (Bounds 기반)
-        //        if (!col.bounds.Contains(p.position) &&
-        //            (col.bounds.ClosestPoint(p.position) - p.position).sqrMagnitude > 0.25f)
-        //            continue;
-
-        //        if (col.CompareTag("LiquidPassable"))
-        //            continue;
-
-        //        if (IsLowObstacle(col, p.position))
-        //            continue;
-
-        //        ResolveCollision(p, col);
-        //    }
-        //}
         foreach (var p in particles)
         {
-            // 바닥 처리
             if (p.position.y < groundY + particleRadius)
             {
                 p.position.y = groundY + particleRadius;
                 if (p.velocity.y < 0) p.velocity.y *= -0.3f;
             }
 
-            // 주변 콜라이더 수집 (핵 기준이 아니라 입자 기준으로 소량만 체크)
-            // 성능이 걱정된다면 5~10프레임마다 한 번씩만 갱신하는 캐시를 사용하세요.
             int hitCount = Physics.OverlapSphereNonAlloc(
                 p.position,
-                particleRadius * 2f, // 입자 주변 아주 좁은 범위
+                particleRadius * 2f,
                 colliderCache,
                 environmentLayer
             );
@@ -249,14 +194,10 @@ public class PlayerParticleSystem : MonoBehaviour
 
     bool IsLowObstacle(Collider col, Vector3 particlePos)
     {
-        // 장애물 높이가 0.5 이하면 액체가 넘어감
         float obstacleTop = col.bounds.max.y;
         float obstacleHeight = col.bounds.size.y;
-
-        // 입자가 장애물 위쪽에 있고, 장애물이 낮으면 통과
         if (obstacleHeight < 0.5f && particlePos.y > obstacleTop - 0.1f)
             return true;
-
         return false;
     }
 
@@ -266,51 +207,52 @@ public class PlayerParticleSystem : MonoBehaviour
         Vector3 diff = p.position - closestPoint;
         float dist = diff.magnitude;
 
-        if (dist < particleRadius)
+        if (dist >= particleRadius) return;
+
+        // ─── 1단계: normal 결정 (변경 없음) ────────────────────────
+        Vector3 normal;
+        if (dist < 0.0001f)
         {
-            Vector3 normal;
-
-            // ─── 1단계: 반발 방향(Normal) 결정 ───
-            if (dist < 0.0001f)
-            {
-                // 완전히 겹침: 콜라이더 중심에서 입자 위치로 향하는 방향을 법선으로 사용
-                // 만약 중심과도 겹쳤다면 최후의 보루로 위쪽(Vector3.up) 사용
-                Vector3 centerToParticle = p.position - col.bounds.center;
-                normal = centerToParticle.sqrMagnitude > 0.0001f ? centerToParticle.normalized : Vector3.up;
-
-                // 위치 보정: 콜라이더 표면 밖으로 강제 이동
-                p.position = closestPoint + normal * particleRadius;
-            }
-            else
-            {
-                // 표면 근처: 기존 방식대로 법선 계산
-                normal = diff / dist;
-                float penetration = particleRadius - dist;
-                p.position += normal * penetration;
-            }
-
-            // ─── 2단계: 속도 반사 및 충격 가하기 ───
-            float velAlongNormal = Vector3.Dot(p.velocity, normal);
-
-            if (velAlongNormal < 0)
-            {
-                // 1. 기존 속도 반사 (입사각/반사각)
-                // 1.3f는 반발 계수(Bounciness)입니다. 1.0보다 크면 더 강하게 튕깁니다.
-                p.velocity -= normal * velAlongNormal * 1.5f;
-
-                // 2. 추가적인 척력 (선택 사항)
-                // 속도가 너무 느려 벽에 끼는 것을 방지하기 위해 최소 반발 속도를 부여합니다.
-                p.velocity += normal * 2.0f;
-            }
-
-            // 3. 마찰력 적용 (벽을 타고 흐르는 느낌)
-            // 법선 방향이 아닌 속도(접선 속도)를 줄여서 끈적하게 만듭니다.
-            Vector3 tangentVelocity = p.velocity - (normal * Vector3.Dot(p.velocity, normal));
-            p.velocity -= tangentVelocity * 0.2f; // 0.2f는 끈적임 정도
+            Vector3 centerToParticle = p.position - col.bounds.center;
+            normal = centerToParticle.sqrMagnitude > 0.0001f
+                ? centerToParticle.normalized
+                : Vector3.up;
+            p.position = closestPoint + normal * particleRadius;
         }
+        else
+        {
+            normal = diff / dist;
+            float penetration = particleRadius - dist;
+
+            // ─── [수정 D-1] penetration 보정량 제한 ─────────────────
+            // 한 프레임에 반경의 80%까지만 밀어낸다.
+            // warmup 중에는 더 조심스럽게 60%로 제한.
+            float maxCorrection = particleRadius * (warmupFramesLeft > 0 ? 0.6f : 0.8f);
+            float correction = Mathf.Min(penetration, maxCorrection);
+            p.position += normal * correction;
+            // ────────────────────────────────────────────────────────
+        }
+
+        // ─── 2단계: 속도 반사 ───────────────────────────────────────
+        float velAlongNormal = Vector3.Dot(p.velocity, normal);
+        if (velAlongNormal < 0)
+        {
+            // ─── [수정 D-2] restitution 과다 제거 ────────────────────
+            // 기존: velAlongNormal * 1.5f + normal * 2.0f
+            //   → 에너지가 150% 반환 + 최소 척력 추가로 폭발 유발
+            // 수정: restitution 0.1 (에너지 10%만 반환), 추가 척력 제거
+            float restitution = warmupFramesLeft > 0 ? 0.0f : 0.1f;
+            p.velocity -= normal * (velAlongNormal * (1f + restitution));
+            // ────────────────────────────────────────────────────────
+        }
+
+        // 3단계: 마찰 (변경 없음)
+        Vector3 tangentVelocity = p.velocity - (normal * Vector3.Dot(p.velocity, normal));
+        p.velocity -= tangentVelocity * 0.2f;
     }
 
-    //응집력: 핵을 향해 당김
+    // ─── [수정 없음] 응집력 로직 자체는 그대로 ───
+    // 강도 스케일링은 SimulationStep에서 cohesionStrength를 임시 변경하는 방식으로 처리
     void ApplyCohesion(Particle p, float dt, bool canScan)
     {
         Vector3 toCore = core.transform.position - p.position;
@@ -320,63 +262,23 @@ public class PlayerParticleSystem : MonoBehaviour
 
         Vector3 dir = toCore / dist;
 
-        //if(Physics.Raycast(p.position, dir, dist, environmentLayer))
-        //{
-        //    Vector3 newBypass = GetBypassDirection(p, dir, dist);
-        //    if(newBypass != Vector3.zero)
-        //    {
-        //        p.velocity += newBypass * pullForce * 1.2f * dt;
-        //        p.velocity += dir * pullForce * 0.1f * dt;
-        //        return;
-        //    }
-        //}
-
-        //float pullFactor = Mathf.Pow(Mathf.Clamp01(1.0f - (dist / (cohesionRadius * 2.0f))), 2);
-        //p.velocity += dir * pullForce * pullFactor * dt;
         if (dist > cohesionRadius)
         {
-            // 반경 밖: 강하게 당김
             float overflow = dist - cohesionRadius;
             p.velocity += dir * overflow * cohesionStrength * dt;
         }
         else
         {
-            // 반경 안: 약하게 당김
             float factor = dist / cohesionRadius;
             p.velocity += dir * factor * cohesionStrength * 0.3f * dt;
         }
     }
-    Vector3 GetBypassDirection(Particle p, Vector3 toCoreDir, float distToCore)
-    {
-        float step = 0.5f; // 스캔 간격 (장애물 두께에 따라 조절)
-        int maxSteps = 10; // 최대 5m까지 스캔
 
-        for (int i = 1; i <= maxSteps; i++)
-        {
-            float offset = i * step;
-
-            // 위쪽 검사: 해당 높이로 올라갔을 때 코어가 보이는가?
-            Vector3 upPos = p.position + Vector3.up * offset;
-            if (!Physics.CheckSphere(upPos, particleRadius, environmentLayer)) // 머리 위가 비었나?
-            {
-                if (!Physics.Raycast(upPos, toCoreDir, distToCore, environmentLayer)) // 거기서 코어가 보이나?
-                    return Vector3.up;
-            }
-
-            // 아래쪽 검사
-            Vector3 downPos = p.position + Vector3.down * offset;
-            if (!Physics.CheckSphere(downPos, particleRadius, environmentLayer))
-            {
-                if (!Physics.Raycast(downPos, toCoreDir, distToCore, environmentLayer))
-                    return Vector3.down;
-            }
-        }
-        return Vector3.zero;
-    }
+    // ─── [수정 E] SetHumanoid: warmup 리셋 불필요 (cohesion=0이므로) ───
     public int SetHumanoid()
     {
         int removeCount = 0;
-        for(int i = particles.Count - 1; i >= 0; i--)
+        for (int i = particles.Count - 1; i >= 0; i--)
         {
             var p = particles[i];
             Vector3 toCore = core.transform.position - p.position;
@@ -390,55 +292,109 @@ public class PlayerParticleSystem : MonoBehaviour
         cohesionStrength = 0f;
         return removeCount;
     }
+
+    // ─── [수정 F] SetSoul: 핵심 수정 지점 ─────────────────────────────
     public void SetSoul(int count)
     {
         cohesionStrength = defaultCohesionStrength;
 
-        for (int i = 0; i < count; i++)
+        // [수정 F-1] warmup 시작
+        // 이 한 줄이 핵심: 이후 spawnWarmupFrames 동안 힘이 서서히 켜진다.
+        warmupFramesLeft = spawnWarmupFrames;
+
+        int spawned = 0;
+        int maxAttempts = count * 20;
+        int attempts = 0;
+
+        // [수정 F-2] 최소 이격 거리 보장
+        // 기존: Random.insideUnitSphere만 사용 → 입자끼리 겹침 가능
+        // 수정: 이미 스폰된 입자와 minSpawnDist 이상 떨어진 위치만 허용
+        float minSpawnDist = particleRadius * 2.5f; // 직경보다 약간 여유
+        List<Vector3> spawnedPositions = new List<Vector3>();
+
+        while (spawned < count && attempts < maxAttempts)
         {
-            Vector3 randomDir = Random.insideUnitSphere;
-            if (randomDir.y < 0) randomDir.y *= -0.5f;
+            attempts++;
 
-            // 원래 원하던 목표 위치
-            float spawnRadius = 1.5f;
-            Vector3 targetPos = core.transform.position + randomDir * spawnRadius;
+            Vector3 randomDir = Random.insideUnitSphere.normalized;
+            randomDir.y = Mathf.Abs(randomDir.y);
 
-            // 1. 코어 중심에서 목표 위치로 레이를 쏴서 중간에 벽이 있는지 확인
-            if (Physics.Raycast(core.transform.position, randomDir, out RaycastHit hit, spawnRadius, environmentLayer))
+            float maxSpawnDist = 1.5f;
+            float wallDist = maxSpawnDist;
+
+            if (Physics.Raycast(core.transform.position, randomDir, out RaycastHit hit, maxSpawnDist, environmentLayer))
             {
-                // 벽이 있다면, 벽 표면에서 파티클 반지름(또는 여유 공간)만큼 앞쪽으로 위치를 당겨옴
-                targetPos = hit.point - (randomDir * (particleRadius + 0.1f));
+                wallDist = hit.distance - particleRadius * 2f;
             }
 
-            if (targetPos.y < core.transform.position.y)
-                targetPos.y = core.transform.position.y + 0.1f;
+            if (wallDist < particleRadius * 2f) continue;
+
+            float spawnDist = Random.Range(particleRadius, Mathf.Min(wallDist, 1.0f));
+            Vector3 targetPos = core.transform.position + randomDir * spawnDist;
+
+            if (targetPos.y < groundY + particleRadius) continue;
+
+            // [수정 F-2 검사] 이미 스폰된 입자와 너무 가까우면 스킵
+            bool tooClose = false;
+            foreach (var existing in spawnedPositions)
+            {
+                if ((existing - targetPos).sqrMagnitude < minSpawnDist * minSpawnDist)
+                {
+                    tooClose = true;
+                    break;
+                }
+            }
+            if (tooClose) continue;
 
             Particle p = new Particle(targetPos);
             p.velocity = Vector3.zero;
-            p.prevPosition = targetPos; // prevPosition도 보정된 위치로 확실히 잡아줌
+            p.prevPosition = targetPos;
+            particles.Add(p);
+            spawnedPositions.Add(targetPos);
+            spawned++;
+        }
+
+        // fallback: 최소 이격 없이 위쪽에 쌓기 (나머지 수량)
+        for (int i = spawned; i < count; i++)
+        {
+            Vector3 fallback = core.transform.position
+                + Vector3.up * (particleRadius * 2.5f * (i - spawned + 1));
+            Particle p = new Particle(fallback);
+            p.velocity = Vector3.zero;
+            p.prevPosition = fallback;
             particles.Add(p);
         }
     }
-    //void ApplyCohesion(Particle p, float dt)
-    //{
-    //    Vector3 toCore = core.transform.position - p.position;
-    //    float dist = toCore.magnitude;
+    // ──────────────────────────────────────────────────────────────────
 
-    //    // 1. 너무 멀면 낙오 (기존 유지)
-    //    if (dist > cohesionRadius * 2.0f) return;
+    Vector3 GetBypassDirection(Particle p, Vector3 toCoreDir, float distToCore)
+    {
+        float step = 0.5f;
+        int maxSteps = 10;
 
-    //    // 2. [추가] 너무 가까우면 당기지 않음 (핵의 물리 이동 방해 방지)
-    //    if (dist < 0.5f) return;
+        for (int i = 1; i <= maxSteps; i++)
+        {
+            float offset = i * step;
 
-    //    Vector3 dir = toCore / dist;
+            Vector3 upPos = p.position + Vector3.up * offset;
+            if (!Physics.CheckSphere(upPos, particleRadius, environmentLayer))
+            {
+                if (!Physics.Raycast(upPos, toCoreDir, distToCore, environmentLayer))
+                    return Vector3.up;
+            }
 
-    //    // 3. 거리 제곱 감쇠 (기존 유지)
-    //    float pullFactor = Mathf.Clamp01(1.0f - (dist / (cohesionRadius * 2.0f)));
-    //    pullFactor = Mathf.Pow(pullFactor, 2);
+            Vector3 downPos = p.position + Vector3.down * offset;
+            if (!Physics.CheckSphere(downPos, particleRadius, environmentLayer))
+            {
+                if (!Physics.Raycast(downPos, toCoreDir, distToCore, environmentLayer))
+                    return Vector3.down;
+            }
+        }
+        return Vector3.zero;
+    }
 
-    //    p.velocity += dir * pullForce * pullFactor * dt;
-    //}
-    // 점성 (기존 코드)
+    // ─── [수정 없음] 아래부터는 원본과 동일 ───────────────────────────
+
     void ApplyViscosity(float dt)
     {
         for (int i = 0; i < particles.Count; i++)
@@ -470,20 +426,15 @@ public class PlayerParticleSystem : MonoBehaviour
         }
     }
 
-    // DDR
     void DoubleDensityRelaxation(float dt)
     {
         float dt2 = dt * dt;
 
-        // 밀도 계산
         for (int i = 0; i < particles.Count; i++)
         {
             Particle pi = particles[i];
             pi.density = 0;
             pi.nearDensity = 0;
-
-            float Pi = stiffness * (pi.density - restDensity);
-            float Pi_near = nearStiffness * pi.nearDensity;
 
             spatialHash.GetNeighborIndices(pi.position, neighborCache);
 
@@ -503,7 +454,6 @@ public class PlayerParticleSystem : MonoBehaviour
             }
         }
 
-        // 압력 변위
         for (int i = 0; i < particles.Count; i++)
         {
             Particle pi = particles[i];
@@ -545,14 +495,10 @@ public class PlayerParticleSystem : MonoBehaviour
     {
         for (int i = 0; i < particleCount; i++)
         {
-            // 1. 생성 범위를 조금 더 넓히거나, 특정 지점에서 떨어지게 설정
             Vector3 pos = core.transform.position + Random.insideUnitSphere * 1.5f;
             Particle p = new Particle(pos);
-
-            // 2. 초기 속도를 0으로 확실히 고정 (생성 직후 튀는 현상 방지)
             p.velocity = Vector3.zero;
             p.prevPosition = pos;
-
             particles.Add(p);
         }
     }
@@ -570,16 +516,22 @@ public class PlayerParticleSystem : MonoBehaviour
             Gizmos.color = new Color(1, 1, 0, 0.3f);
             Gizmos.DrawWireSphere(core.transform.position, cohesionRadius);
         }
+
+        // warmup 진행도 시각화 (디버그용)
+        if (warmupFramesLeft > 0)
+        {
+            Gizmos.color = new Color(1, 0.5f, 0, 0.4f);
+            Gizmos.DrawWireSphere(core.transform.position, cohesionRadius * WarmupT);
+        }
     }
+
     void RenderParticles(Camera camera)
     {
         int count = particles.Count;
         if (count == 0) return;
 
-        // 1. 성능 최적화: 배열 재할당 방지
         if (instanceMatrices == null || instanceMatrices.Length < count)
         {
-            // 여유 있게 10% 정도 더 크게 할당하면 파티클 개수가 변할 때 재할당 횟수가 줄어듭니다.
             instanceMatrices = new Matrix4x4[Mathf.CeilToInt(count * 1.1f)];
         }
 
@@ -592,16 +544,11 @@ public class PlayerParticleSystem : MonoBehaviour
             );
         }
 
-        // 2. RenderParams 설정 (크래시 방지 핵심)
         RenderParams rp = new RenderParams(particleMaterial);
-        rp.layer = LayerMask.NameToLayer("Liquid"); // 10번 레이어 할당
+        rp.layer = LayerMask.NameToLayer("Liquid");
         rp.camera = camera;
-
-        // 중요: 카메라가 이 메쉬를 그릴지 판단할 영역을 설정합니다. 
-        // 실제 파티클이 위치하는 전체 범위를 넣거나, 테스트를 위해 아주 크게 잡으세요.
         rp.worldBounds = new Bounds(Vector3.zero, Vector3.one * 1000f);
 
-        // 3. 인스턴싱 그리기
         Graphics.RenderMeshInstanced(rp, particleMesh, 0, instanceMatrices, count);
     }
-}   
+}
