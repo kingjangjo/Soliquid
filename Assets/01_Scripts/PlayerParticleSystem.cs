@@ -294,76 +294,137 @@ public class PlayerParticleSystem : MonoBehaviour
     }
 
     // ─── [수정 F] SetSoul: 핵심 수정 지점 ─────────────────────────────
+    //public void SetSoul(int count)
+    //{
+    //    cohesionStrength = defaultCohesionStrength;
+
+    //    // [수정 F-1] warmup 시작
+    //    // 이 한 줄이 핵심: 이후 spawnWarmupFrames 동안 힘이 서서히 켜진다.
+    //    warmupFramesLeft = spawnWarmupFrames;
+
+    //    int spawned = 0;
+    //    int maxAttempts = count * 20;
+    //    int attempts = 0;
+
+    //    // [수정 F-2] 최소 이격 거리 보장
+    //    // 기존: Random.insideUnitSphere만 사용 → 입자끼리 겹침 가능
+    //    // 수정: 이미 스폰된 입자와 minSpawnDist 이상 떨어진 위치만 허용
+    //    float minSpawnDist = particleRadius * 2.5f; // 직경보다 약간 여유
+    //    List<Vector3> spawnedPositions = new List<Vector3>();
+
+    //    while (spawned < count && attempts < maxAttempts)
+    //    {
+    //        attempts++;
+
+    //        Vector3 randomDir = Random.insideUnitSphere.normalized;
+    //        randomDir.y = Mathf.Abs(randomDir.y);
+
+    //        float maxSpawnDist = 1.5f;
+    //        float wallDist = maxSpawnDist;
+
+    //        if (Physics.Raycast(core.transform.position, randomDir, out RaycastHit hit, maxSpawnDist, environmentLayer))
+    //        {
+    //            wallDist = hit.distance - particleRadius * 2f;
+    //        }
+
+    //        if (wallDist < particleRadius * 2f) continue;
+
+    //        float spawnDist = Random.Range(particleRadius, Mathf.Min(wallDist, 1.0f));
+    //        Vector3 targetPos = core.transform.position + randomDir * spawnDist;
+
+    //        if (targetPos.y < groundY + particleRadius) continue;
+
+    //        // [수정 F-2 검사] 이미 스폰된 입자와 너무 가까우면 스킵
+    //        bool tooClose = false;
+    //        foreach (var existing in spawnedPositions)
+    //        {
+    //            if ((existing - targetPos).sqrMagnitude < minSpawnDist * minSpawnDist)
+    //            {
+    //                tooClose = true;
+    //                break;
+    //            }
+    //        }
+    //        if (tooClose) continue;
+
+    //        Particle p = new Particle(targetPos);
+    //        p.velocity = Vector3.zero;
+    //        p.prevPosition = targetPos;
+    //        particles.Add(p);
+    //        spawnedPositions.Add(targetPos);
+    //        spawned++;
+    //    }
+
+    //    // fallback: 최소 이격 없이 위쪽에 쌓기 (나머지 수량)
+    //    for (int i = spawned; i < count; i++)
+    //    {
+    //        Vector3 fallback = core.transform.position
+    //            + Vector3.up * (particleRadius * 2.5f * (i - spawned + 1));
+    //        Particle p = new Particle(fallback);
+    //        p.velocity = Vector3.zero;
+    //        p.prevPosition = fallback;
+    //        particles.Add(p);
+    //    }
+    //}
     public void SetSoul(int count)
+
     {
+
+        //for(int i = 0; i < count; i++)
+
+        //{
+
+        //    Vector3 pos = core.transform.position + Random.insideUnitSphere * 1.5f;
+
+        //    Particle p = new Particle(pos);
+
+
+
+        //    // 2. 초기 속도를 0으로 확실히 고정 (생성 직후 튀는 현상 방지)
+
+        //    p.velocity = Vector3.zero;
+
+        //    p.prevPosition = pos;
+
+
+
+        //    particles.Add(p);
+
+        //}
+
         cohesionStrength = defaultCohesionStrength;
 
-        // [수정 F-1] warmup 시작
-        // 이 한 줄이 핵심: 이후 spawnWarmupFrames 동안 힘이 서서히 켜진다.
-        warmupFramesLeft = spawnWarmupFrames;
+        for (int i = 0; i < count; i++)
 
-        int spawned = 0;
-        int maxAttempts = count * 20;
-        int attempts = 0;
-
-        // [수정 F-2] 최소 이격 거리 보장
-        // 기존: Random.insideUnitSphere만 사용 → 입자끼리 겹침 가능
-        // 수정: 이미 스폰된 입자와 minSpawnDist 이상 떨어진 위치만 허용
-        float minSpawnDist = particleRadius * 2.5f; // 직경보다 약간 여유
-        List<Vector3> spawnedPositions = new List<Vector3>();
-
-        while (spawned < count && attempts < maxAttempts)
         {
-            attempts++;
 
-            Vector3 randomDir = Random.insideUnitSphere.normalized;
-            randomDir.y = Mathf.Abs(randomDir.y);
+            // Random.onUnitSphere의 y값을 양수로 절댓값 처리하여 위쪽으로만 퍼지게 함
 
-            float maxSpawnDist = 1.5f;
-            float wallDist = maxSpawnDist;
+            Vector3 randomDir = Random.insideUnitSphere;
 
-            if (Physics.Raycast(core.transform.position, randomDir, out RaycastHit hit, maxSpawnDist, environmentLayer))
-            {
-                wallDist = hit.distance - particleRadius * 2f;
-            }
+            if (randomDir.y < 0) randomDir.y *= -0.5f; // 바닥 쪽이면 위로 올림
 
-            if (wallDist < particleRadius * 2f) continue;
 
-            float spawnDist = Random.Range(particleRadius, Mathf.Min(wallDist, 1.0f));
-            Vector3 targetPos = core.transform.position + randomDir * spawnDist;
 
-            if (targetPos.y < groundY + particleRadius) continue;
+            Vector3 pos = core.transform.position + randomDir * 1.5f;
 
-            // [수정 F-2 검사] 이미 스폰된 입자와 너무 가까우면 스킵
-            bool tooClose = false;
-            foreach (var existing in spawnedPositions)
-            {
-                if ((existing - targetPos).sqrMagnitude < minSpawnDist * minSpawnDist)
-                {
-                    tooClose = true;
-                    break;
-                }
-            }
-            if (tooClose) continue;
 
-            Particle p = new Particle(targetPos);
+
+            // 최소 생성 높이 보정 (예: 바닥 위 0.5f 지점)
+
+            if (pos.y < core.transform.position.y) pos.y = core.transform.position.y + 0.1f;
+
+
+
+            Particle p = new Particle(pos);
+
             p.velocity = Vector3.zero;
-            p.prevPosition = targetPos;
+
+            p.prevPosition = pos;
+
             particles.Add(p);
-            spawnedPositions.Add(targetPos);
-            spawned++;
+
         }
 
-        // fallback: 최소 이격 없이 위쪽에 쌓기 (나머지 수량)
-        for (int i = spawned; i < count; i++)
-        {
-            Vector3 fallback = core.transform.position
-                + Vector3.up * (particleRadius * 2.5f * (i - spawned + 1));
-            Particle p = new Particle(fallback);
-            p.velocity = Vector3.zero;
-            p.prevPosition = fallback;
-            particles.Add(p);
-        }
     }
     // ──────────────────────────────────────────────────────────────────
 
