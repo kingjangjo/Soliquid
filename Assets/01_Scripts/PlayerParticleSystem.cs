@@ -294,137 +294,156 @@ public class PlayerParticleSystem : MonoBehaviour
     }
 
     // ─── [수정 F] SetSoul: 핵심 수정 지점 ─────────────────────────────
-    //public void SetSoul(int count)
-    //{
-    //    cohesionStrength = defaultCohesionStrength;
+    [Header("Soul Spawn")]
+    public float maxSearchRadius = 3.0f; // Inspector에서 조절
 
-    //    // [수정 F-1] warmup 시작
-    //    // 이 한 줄이 핵심: 이후 spawnWarmupFrames 동안 힘이 서서히 켜진다.
-    //    warmupFramesLeft = spawnWarmupFrames;
-
-    //    int spawned = 0;
-    //    int maxAttempts = count * 20;
-    //    int attempts = 0;
-
-    //    // [수정 F-2] 최소 이격 거리 보장
-    //    // 기존: Random.insideUnitSphere만 사용 → 입자끼리 겹침 가능
-    //    // 수정: 이미 스폰된 입자와 minSpawnDist 이상 떨어진 위치만 허용
-    //    float minSpawnDist = particleRadius * 2.5f; // 직경보다 약간 여유
-    //    List<Vector3> spawnedPositions = new List<Vector3>();
-
-    //    while (spawned < count && attempts < maxAttempts)
-    //    {
-    //        attempts++;
-
-    //        Vector3 randomDir = Random.insideUnitSphere.normalized;
-    //        randomDir.y = Mathf.Abs(randomDir.y);
-
-    //        float maxSpawnDist = 1.5f;
-    //        float wallDist = maxSpawnDist;
-
-    //        if (Physics.Raycast(core.transform.position, randomDir, out RaycastHit hit, maxSpawnDist, environmentLayer))
-    //        {
-    //            wallDist = hit.distance - particleRadius * 2f;
-    //        }
-
-    //        if (wallDist < particleRadius * 2f) continue;
-
-    //        float spawnDist = Random.Range(particleRadius, Mathf.Min(wallDist, 1.0f));
-    //        Vector3 targetPos = core.transform.position + randomDir * spawnDist;
-
-    //        if (targetPos.y < groundY + particleRadius) continue;
-
-    //        // [수정 F-2 검사] 이미 스폰된 입자와 너무 가까우면 스킵
-    //        bool tooClose = false;
-    //        foreach (var existing in spawnedPositions)
-    //        {
-    //            if ((existing - targetPos).sqrMagnitude < minSpawnDist * minSpawnDist)
-    //            {
-    //                tooClose = true;
-    //                break;
-    //            }
-    //        }
-    //        if (tooClose) continue;
-
-    //        Particle p = new Particle(targetPos);
-    //        p.velocity = Vector3.zero;
-    //        p.prevPosition = targetPos;
-    //        particles.Add(p);
-    //        spawnedPositions.Add(targetPos);
-    //        spawned++;
-    //    }
-
-    //    // fallback: 최소 이격 없이 위쪽에 쌓기 (나머지 수량)
-    //    for (int i = spawned; i < count; i++)
-    //    {
-    //        Vector3 fallback = core.transform.position
-    //            + Vector3.up * (particleRadius * 2.5f * (i - spawned + 1));
-    //        Particle p = new Particle(fallback);
-    //        p.velocity = Vector3.zero;
-    //        p.prevPosition = fallback;
-    //        particles.Add(p);
-    //    }
-    //}
     public void SetSoul(int count)
-
     {
-
-        //for(int i = 0; i < count; i++)
-
-        //{
-
-        //    Vector3 pos = core.transform.position + Random.insideUnitSphere * 1.5f;
-
-        //    Particle p = new Particle(pos);
-
-
-
-        //    // 2. 초기 속도를 0으로 확실히 고정 (생성 직후 튀는 현상 방지)
-
-        //    p.velocity = Vector3.zero;
-
-        //    p.prevPosition = pos;
-
-
-
-        //    particles.Add(p);
-
-        //}
-
         cohesionStrength = defaultCohesionStrength;
+        warmupFramesLeft = spawnWarmupFrames;
 
-        for (int i = 0; i < count; i++)
+        float minDist = particleRadius * 2.2f;
 
+        // ★ 여기서 한 번 계산해서 모든 단계에서 공유
+        float minHeightAboveGround = particleRadius * 3f;
+        Vector3 spawnOrigin = core.transform.position;
+        spawnOrigin.y = Mathf.Max(spawnOrigin.y, spawnOrigin.y + minHeightAboveGround);
+
+        int spawned = 0;
+        int maxAttempts = count * 20;
+
+        for (int attempt = 0; attempt < maxAttempts && spawned < count; attempt++)
         {
+            Vector3 dir = Random.insideUnitSphere;
+            if (dir.sqrMagnitude < 0.001f) continue;
+            dir.Normalize();
 
-            // Random.onUnitSphere의 y값을 양수로 절댓값 처리하여 위쪽으로만 퍼지게 함
+            float dist = Random.Range(minDist, Mathf.Min(1.0f, maxSearchRadius));
+            Vector3 pos = spawnOrigin + dir * dist;  // ★
 
-            Vector3 randomDir = Random.insideUnitSphere;
+            if (pos.y < groundY + particleRadius) continue;
+            if (Physics.CheckSphere(pos, particleRadius * 1.2f, environmentLayer)) continue;
+            if (IsTooClose(pos, minDist)) continue;
 
-            if (randomDir.y < 0) randomDir.y *= -0.5f; // 바닥 쪽이면 위로 올림
-
-
-
-            Vector3 pos = core.transform.position + randomDir * 1.5f;
-
-
-
-            // 최소 생성 높이 보정 (예: 바닥 위 0.5f 지점)
-
-            if (pos.y < core.transform.position.y) pos.y = core.transform.position.y + 0.1f;
-
-
-
-            Particle p = new Particle(pos);
-
-            p.velocity = Vector3.zero;
-
-            p.prevPosition = pos;
-
-            particles.Add(p);
-
+            AddParticle(pos);
+            spawned++;
         }
 
+        if (spawned < count)
+            spawned += SpawnByLayerScan(count - spawned, minDist, spawnOrigin);  // ★ 전달
+
+        for (int i = spawned; i < count; i++)
+        {
+            Vector3 pos = spawnOrigin + Vector3.up * (minDist * (i - spawned + 1));  // ★
+            pos.y = Mathf.Max(pos.y, groundY + particleRadius);
+            AddParticle(pos);
+        }
+    }
+
+    int SpawnByLayerScan(int needed, float minDist, Vector3 spawnOrigin)
+    {
+        int sampleCount = 720;
+        Vector3[] dirs = FibonacciSphere(sampleCount);
+
+        int[] indices = new int[sampleCount];
+        for (int i = 0; i < sampleCount; i++) indices[i] = i;
+
+        bool[] blocked = new bool[sampleCount];
+
+        float layerStep = minDist * 0.8f;
+        int layerCount = Mathf.CeilToInt(maxSearchRadius / layerStep);
+
+        // ★ 핵심: 스폰 기준점을 바닥에서 최소 높이만큼 올림
+        // Core가 바닥에 완전히 붙어있어도 기준점은 항상 공중에 위치
+        //float minHeightAboveGround = particleRadius * 3f;
+        //Vector3 spawnOrigin = core.transform.position;
+        //spawnOrigin.y = Mathf.Max(spawnOrigin.y, groundY + minHeightAboveGround);
+
+        int added = 0;
+
+        for (int li = 0; li < layerCount && added < needed; li++)
+        {
+            float r = layerStep * (li + 1);
+            ShuffleArray(indices);
+
+            for (int di = 0; di < sampleCount && added < needed; di++)
+            {
+                int idx = indices[di];
+                if (blocked[idx]) continue;
+
+                // ★ core.transform.position 대신 spawnOrigin 사용
+                Vector3 pos = spawnOrigin + dirs[idx] * r;
+
+                if (pos.y < groundY + particleRadius) continue;
+
+                float wallCheckRadius = particleRadius * 3f;
+
+                if (Physics.CheckSphere(pos, wallCheckRadius, environmentLayer))
+                {
+                    blocked[idx] = true;
+                    continue;
+                }
+
+                if (IsTooClose(pos, minDist)) continue;
+
+                AddParticle(pos);
+                added++;
+            }
+        }
+
+        return added;
+    }
+
+    void ShuffleArray(int[] arr)
+    {
+        for (int i = arr.Length - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (arr[i], arr[j]) = (arr[j], arr[i]);
+        }
+    }
+
+    void ShuffleArray(Vector3[] arr)
+    {
+        for (int i = arr.Length - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (arr[i], arr[j]) = (arr[j], arr[i]);
+        }
+    }
+
+    // ── 피보나치 구면 분포 ─────────────────────────────────────────────
+    // 균일하게 퍼진 방향 벡터를 생성 (랜덤보다 고르게 분포됨)
+    Vector3[] FibonacciSphere(int n)
+    {
+        var dirs = new Vector3[n];
+        float golden = Mathf.PI * (3f - Mathf.Sqrt(5f)); // 황금각
+
+        for (int i = 0; i < n; i++)
+        {
+            float y = 1f - (i / (float)(n - 1)) * 2f; // +1 ~ -1
+            float r = Mathf.Sqrt(Mathf.Max(0f, 1f - y * y));
+            float theta = golden * i;
+            dirs[i] = new Vector3(r * Mathf.Cos(theta), y, r * Mathf.Sin(theta));
+        }
+        return dirs;
+    }
+
+    // ── 헬퍼 ──────────────────────────────────────────────────────────
+    bool IsTooClose(Vector3 pos, float minDist)
+    {
+        float sqrMin = minDist * minDist;
+        foreach (var p in particles)
+            if ((p.position - pos).sqrMagnitude < sqrMin) return true;
+        return false;
+    }
+
+    void AddParticle(Vector3 pos)
+    {
+        var p = new Particle(pos);
+        p.velocity = Vector3.zero;
+        p.prevPosition = pos;
+        particles.Add(p);
     }
     // ──────────────────────────────────────────────────────────────────
 
