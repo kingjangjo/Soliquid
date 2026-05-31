@@ -65,8 +65,7 @@ public class PlayerParticleSystem : MonoBehaviour
         spatialHash = new SpatialHash(radius);
         SpawnParticles();
     }
-
-    void Update()
+    private void Update()
     {
         if (Input.GetKeyDown(KeyCode.E))
         {
@@ -80,7 +79,10 @@ public class PlayerParticleSystem : MonoBehaviour
                 cohesionStrength = originCohesionStrength;
             }
         }
+    }
 
+    void FixedUpdate()
+    {
         // ─── [수정 A-1] warmup 카운트다운 ───
         if (warmupFramesLeft > 0)
             warmupFramesLeft--;
@@ -171,6 +173,12 @@ public class PlayerParticleSystem : MonoBehaviour
             if (p.position.y < groundY + particleRadius)
             {
                 p.position.y = groundY + particleRadius;
+
+                if (p.prevPosition.y < groundY + particleRadius)
+                {
+                    p.prevPosition.y = groundY + particleRadius;
+                }
+
                 if (p.velocity.y < 0) p.velocity.y *= -0.3f;
             }
 
