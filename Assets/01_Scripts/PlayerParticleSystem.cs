@@ -342,7 +342,7 @@ public class PlayerParticleSystem : MonoBehaviour
 
     int SpawnByLayerScan(int needed, float minDist, Vector3 spawnOrigin)
     {
-        int sampleCount = 720;
+        int sampleCount = 120;
         Vector3[] dirs = FibonacciSphere(sampleCount);
 
         int[] indices = new int[sampleCount];
@@ -590,6 +590,7 @@ public class PlayerParticleSystem : MonoBehaviour
         Gizmos.color = new Color(0, 0.5f, 1f, 0.7f);
         foreach (var p in particles)
             Gizmos.DrawSphere(p.position, particleRadius);
+
 
         if (core != null)
         {
