@@ -13,7 +13,7 @@ public class SettingData
     // 그래픽
     public int resolutionWidth = 1920;
     public int resolutionHeight = 1080;
-    public bool isFullscreen = true;
+    public int screenModeIndex = 0;
     public int fpsLimit = 60;
 
     // 키 바인딩 (Input System의 Overrides JSON 문자열을 그대로 저장)

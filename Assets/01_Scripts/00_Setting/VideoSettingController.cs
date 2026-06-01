@@ -9,17 +9,18 @@ public class VideoSettingController : MonoBehaviour
         ApplyVideoSettings();
     }
 
+    // VideoSettingController.cs 내부의 함수
     private void ApplyVideoSettings()
     {
         SettingData data = SettingManager.Instance.CurrentData;
 
-        // 1. 해상도 및 창모드 적용
-        Screen.SetResolution(data.resolutionWidth, data.resolutionHeight, data.isFullscreen);
+        // 드롭다운 인덱스에 따라 화면 모드 결정
+        FullScreenMode mode = FullScreenMode.FullScreenWindow; // 기본: 전체화면
+        if (data.screenModeIndex == 1) mode = FullScreenMode.Windowed; // 창모드
+        else if (data.screenModeIndex == 2) mode = FullScreenMode.MaximizedWindow; // 테두리 없는 창모드
 
-        // 2. 프레임 제한 적용
+        Screen.SetResolution(data.resolutionWidth, data.resolutionHeight, mode);
         Application.targetFrameRate = data.fpsLimit;
-
-        Debug.Log($"그래픽 적용: {data.resolutionWidth}x{data.resolutionHeight}, FullScreen={data.isFullscreen}, FPS={data.fpsLimit}");
     }
 
     private void OnDestroy()

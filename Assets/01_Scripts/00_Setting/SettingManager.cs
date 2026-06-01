@@ -77,11 +77,11 @@ public class SettingManager : MonoBehaviour
         OnAudioSettingsChanged?.Invoke();
     }
 
-    public void UpdateVideoSettings(int width, int height, bool fullScreen, int fps)
+    public void UpdateVideoSettings(int width, int height, int fullScreenIdx, int fps)
     {
         CurrentData.resolutionWidth = width;
         CurrentData.resolutionHeight = height;
-        CurrentData.isFullscreen = fullScreen;
+        CurrentData.screenModeIndex = fullScreenIdx;
         CurrentData.fpsLimit = fps;
         OnVideoSettingsChanged?.Invoke();
     }
