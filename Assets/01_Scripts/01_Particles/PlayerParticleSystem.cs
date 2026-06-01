@@ -350,7 +350,7 @@ public class PlayerParticleSystem : MonoBehaviour
 
     int SpawnByLayerScan(int needed, float minDist, Vector3 spawnOrigin)
     {
-        int sampleCount = 120;
+        int sampleCount = 360;
         Vector3[] dirs = FibonacciSphere(sampleCount);
 
         int[] indices = new int[sampleCount];
