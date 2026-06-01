@@ -178,6 +178,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3632365604039967085, guid: 878ce8a3326e89e4f9a0c9f1f0b65d9c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 86323248}
+    - targetCorrespondingSourceObject: {fileID: 3632365604039967085, guid: 878ce8a3326e89e4f9a0c9f1f0b65d9c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 86323249}
   m_SourcePrefab: {fileID: 100100000, guid: 878ce8a3326e89e4f9a0c9f1f0b65d9c, type: 3}
 --- !u!4 &86323246 stripped
 Transform:
@@ -202,8 +205,30 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChamberDoor
   isLocked: 1
-  anim: {fileID: 0}
+  anim: {fileID: 86323249}
   transitionRoom: {fileID: 0}
+--- !u!95 &86323249
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 86323247}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 5a63e9d340e4eb445a7e55f36db6b293, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &127354976
 GameObject:
   m_ObjectHideFlags: 0

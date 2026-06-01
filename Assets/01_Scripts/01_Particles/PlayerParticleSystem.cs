@@ -65,21 +65,21 @@ public class PlayerParticleSystem : MonoBehaviour
         spatialHash = new SpatialHash(radius);
         SpawnParticles();
     }
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            if (cohesionStrength > 0)
-            {
-                originCohesionStrength = cohesionStrength;
-                cohesionStrength = 0f;
-            }
-            else
-            {
-                cohesionStrength = originCohesionStrength;
-            }
-        }
-    }
+    //private void Update()
+    //{
+    //    if (Input.GetKeyDown(KeyCode.E))
+    //    {
+    //        if (cohesionStrength > 0)
+    //        {
+    //            originCohesionStrength = cohesionStrength;
+    //            cohesionStrength = 0f;
+    //        }
+    //        else
+    //        {
+    //            cohesionStrength = originCohesionStrength;
+    //        }
+    //    }
+    //}
 
     void FixedUpdate()
     {
