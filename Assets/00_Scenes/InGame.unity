@@ -178,6 +178,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3632365604039967085, guid: 878ce8a3326e89e4f9a0c9f1f0b65d9c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 86323248}
+    - targetCorrespondingSourceObject: {fileID: 3632365604039967085, guid: 878ce8a3326e89e4f9a0c9f1f0b65d9c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 86323249}
   m_SourcePrefab: {fileID: 100100000, guid: 878ce8a3326e89e4f9a0c9f1f0b65d9c, type: 3}
 --- !u!4 &86323246 stripped
 Transform:
@@ -201,11 +204,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fcd26fe86c0528409030b04f45618a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChamberDoor
-  nextChamber: 0
   isLocked: 1
-  anim: {fileID: 0}
-  pipeEntrance: {fileID: 0}
-  transitionDuration: 1.5
+  anim: {fileID: 86323249}
+  transitionRoom: {fileID: 701533524}
+--- !u!95 &86323249
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 86323247}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &127354976
 GameObject:
   m_ObjectHideFlags: 0
@@ -224,7 +247,7 @@ GameObject:
   - component: {fileID: 127354984}
   m_Layer: 8
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1269,6 +1292,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &701533524 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3968243659602193005, guid: ebc4fe1fe074bbc48a23a01b3f82ed0f, type: 3}
+  m_PrefabInstance: {fileID: 6859977603844680284}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &709663233
 GameObject:
   m_ObjectHideFlags: 0
@@ -2878,7 +2906,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3968243659602193005, guid: ebc4fe1fe074bbc48a23a01b3f82ed0f, type: 3}
       propertyPath: m_Name
-      value: Corridor_01 (1)
+      value: Transition_Room
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
