@@ -36,7 +36,10 @@ public class SettingUIBridge : MonoBehaviour
         resolutionDropdown.onValueChanged.AddListener(index => OnVideoUIChanged());
         fpsDropdown.onValueChanged.AddListener(index => OnVideoUIChanged());
 
-        languageDropdown.onValueChanged.AddListener(index => OnLanguageDropdownChanged());
+        languageDropdown.onValueChanged.AddListener(index => OnLanguageDropdownChanged()); 
+        if (data.languageCode == "KO") languageDropdown.value = 0;
+        else if (data.languageCode == "EN") languageDropdown.value = 1;
+        else if (data.languageCode == "JA") languageDropdown.value = 2;
     }
 
     private void OnAudioSliderChanged()

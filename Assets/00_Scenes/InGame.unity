@@ -339,6 +339,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   groundCheckRadius: 0.2
+  moveActionRef: {fileID: -6354126600009701502, guid: 04503846a666e6b48b91e7ab17163996, type: 3}
+  jumpActionRef: {fileID: 3049334864625014146, guid: 04503846a666e6b48b91e7ab17163996, type: 3}
   playerAnim: {fileID: 580202247}
   currentForm: 0
 --- !u!136 &127354981

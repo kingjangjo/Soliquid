@@ -1,13 +1,15 @@
 using System;
 using System.IO;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class SettingManager : MonoBehaviour
 {
     public static SettingManager Instance { get; private set; }
 
     public SettingData CurrentData { get; private set; } = new SettingData();
-
+    [Header("Input System")]
+    public InputActionAsset inputActions;
     // 설정 변경을 하위 모듈에 알릴 이벤트들
     public event Action OnAudioSettingsChanged;
     public event Action OnVideoSettingsChanged;
@@ -61,6 +63,10 @@ public class SettingManager : MonoBehaviour
                 Debug.LogError($"설정 로드 실패(기본값 사용): {e.Message}");
                 CurrentData = new SettingData();
             }
+            if (inputActions != null && !string.IsNullOrEmpty(CurrentData.keyBindingsJson))
+            {
+                inputActions.LoadBindingOverridesFromJson(CurrentData.keyBindingsJson);
+            }
         }
         else
         {
@@ -90,5 +96,9 @@ public class SettingManager : MonoBehaviour
     {
         CurrentData.languageCode = langCode;
         OnLocalizationChanged?.Invoke();
+    }
+    public void UpdateKeyBindings(string overridesJson)
+    {
+        CurrentData.keyBindingsJson = overridesJson;
     }
 }
