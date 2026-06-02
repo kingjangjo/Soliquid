@@ -2098,14 +2098,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ceb787bbfd830841b37d2796789b8a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LocalizationManager
-  googleSheetCSVUrl: https://docs.google.com/spreadsheets/d/e/2PACX-1vRqrVqIg9hCP0l4-Iu1JjKIxDfgO2tjtOrddiYxdWhg7jqTJracX6JlN7OOMGscDgRVpFL75q79ou3i/pubhtml?gid=1946011291&single=true
+  googleSheetCSVUrl: https://docs.google.com/spreadsheets/d/e/2PACX-1vRqrVqIg9hCP0l4-Iu1JjKIxDfgO2tjtOrddiYxdWhg7jqTJracX6JlN7OOMGscDgRVpFL75q79ou3i/pub?gid=1946011291&single=true&output=csv
   fontMappings:
   - languageCode: KO
-    fontAsset: {fileID: 0}
+    fontAsset: {fileID: 11400000, guid: 7dea9aa69160ff844a053ef87ff54b40, type: 2}
   - languageCode: EN
     fontAsset: {fileID: 11400000, guid: 428261a2c9ac94f48a8eeb0b3c160e5a, type: 2}
   - languageCode: JP
-    fontAsset: {fileID: 0}
+    fontAsset: {fileID: 11400000, guid: eb3effe94a90d80429c464753501aa9c, type: 2}
 --- !u!1 &376201173
 GameObject:
   m_ObjectHideFlags: 0
@@ -5290,6 +5290,7 @@ GameObject:
   - component: {fileID: 1054073859}
   - component: {fileID: 1054073861}
   - component: {fileID: 1054073860}
+  - component: {fileID: 1054073862}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -5416,6 +5417,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1054073858}
   m_CullTransparentMesh: 1
+--- !u!114 &1054073862
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1054073858}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 295c12b948c87c44188533c9036b1990, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizeTextMeshPro
+  localizationTextId: Start
 --- !u!1 &1110204520
 GameObject:
   m_ObjectHideFlags: 0
